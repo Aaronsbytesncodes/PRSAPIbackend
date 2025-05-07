@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using PRS_API_AB.Models;
-using System.Collections.Generic;
-using System.Reflection.Emit;
-namespace PRS_API_AB
+using PRSBackendAB.models;
+namespace PRSBackendAB
 
 
 { 

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PRS_API_AB.Models
+namespace PRSBackendAB.models
 {
     [Table("User")]
     public class User
@@ -17,6 +17,6 @@ namespace PRS_API_AB.Models
         public bool? Admin { get; set; }
 
       
-        public string PasswordHash { get; set; }
+        //public string PasswordHash { get; set; }
     }
 }

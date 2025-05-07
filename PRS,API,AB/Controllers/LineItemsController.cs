@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PRS_API_AB;
-using PRS_API_AB.Models;
+using PRSBackendAB.models;
 
-namespace PRS_API_AB.Controllers
+namespace PRSBackendAB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -16,15 +10,9 @@ namespace PRS_API_AB.Controllers
     {
         private readonly PrsDbContext _context = context;
 
-        // GET: api/LineItems
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<LineItem>>> GetLineItems()
-        {
-            return await _context.LineItems.ToListAsync();
-        }
-
-        // GET: api/LineItems/5
-        [HttpGet("{id}")]
+  
+      
+        [HttpGet("{id}")]// get by ID
         public async Task<ActionResult<LineItem>> GetLineItem(int id)
         {
             var lineItem = await _context.LineItems.FindAsync(id);
@@ -37,10 +25,10 @@ namespace PRS_API_AB.Controllers
             return lineItem;
         }
 
-        // PUT: api/LineItems/5
+        // PUT: update and recalctotal
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutLineItem(int id, LineItem lineItem)
+        public async Task<IActionResult> PutLineItem( int id, LineItem lineItem)
         {
             if (id != lineItem.Id)
             {
@@ -52,6 +40,7 @@ namespace PRS_API_AB.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                await RecalculateRequestTotal(lineItem.RequestID); // Recalculate total after update
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -68,27 +57,32 @@ namespace PRS_API_AB.Controllers
             return NoContent();
         }
 
-        // POST: api/LineItems
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // POST: add new line item and recalctotal
         [HttpPost]
-        public async Task<ActionResult<LineItem>> PostLineItem(LineItem lineItem)
+        public async Task<ActionResult<LineItem>> PostLineItem([FromBody] LineItem lineItem)
         {
             _context.LineItems.Add(lineItem);
             await _context.SaveChangesAsync();
 
+            // Recalculate the total for the associated request
+            await RecalculateRequestTotal(lineItem.RequestID);
+
             return CreatedAtAction("GetLineItem", new { id = lineItem.Id }, lineItem);
         }
 
-        // DELETE: api/LineItems/5
+
+        // DELETE: delete line item
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteLineItem(int id)
         {
             var lineItem = await _context.LineItems.FindAsync(id);
             if (lineItem == null)
             {
+                
                 return NotFound();
             }
-
+            await RecalculateRequestTotal(lineItem.RequestID);
             _context.LineItems.Remove(lineItem);
             await _context.SaveChangesAsync();
 
@@ -98,6 +92,40 @@ namespace PRS_API_AB.Controllers
         private bool LineItemExists(int id)
         {
             return _context.LineItems.Any(e => e.Id == id);
+        }
+            
+            [HttpGet("lines-for-req/{reqId}")]// Get lineitems for request
+        public async Task<ActionResult<IEnumerable<LineItem>>> GetLineItemsForRequest(int reqId)
+        {
+           
+            var lineItems = await _context.LineItems
+                                          .Where(li => li.RequestID == reqId)
+                                          .ToListAsync();
+
+            // Check if no LineItems were found
+            if (lineItems == null || !lineItems.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(lineItems);
+        }
+        private async Task RecalculateRequestTotal(int requestId)
+        {
+            var request = await _context.Requests.FindAsync(requestId);
+            if (request == null) return;
+
+            var total = await _context.LineItems
+                                      .Where(li => li.RequestID == requestId)
+                                      .Join(_context.Products,
+                                            li => li.ProductID,
+                                            p => p.ID,
+                                            (li, p) => li.Quantity * p.Price)
+                                      .SumAsync();
+
+            request.Total = total;
+            _context.Entry(request).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
         }
     }
 }

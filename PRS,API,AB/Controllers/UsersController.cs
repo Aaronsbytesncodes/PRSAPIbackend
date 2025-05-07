@@ -1,24 +1,34 @@
 ﻿
+using PRSBackendAB.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PRS_API_AB.Models;
+using PRSBackendAB.models;
 
-namespace PRS_API_AB.Controllers
+namespace PRSBackendAB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController(PrsDbContext context) : ControllerBase
+    public class UsersController : ControllerBase
     {
-        private readonly PrsDbContext _context = context;
+        private readonly PrsDbContext _context;
 
-        // GET: api/Users
-        [HttpGet]
+        public UsersController(PrsDbContext context)
+        {
+            _context = context;
+        }
+
+
+
+
+
+
+        [HttpGet] // GET: All users
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
             return await _context.Users.ToListAsync();
         }
 
-        // GET: api/Users/5
+        // GET:user by ID
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
@@ -31,8 +41,7 @@ namespace PRS_API_AB.Controllers
 
             return user;
         }
-
-        // PUT: api/Users/5
+        // PUT: updates user
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUser(int id, User user)
         {
@@ -62,7 +71,9 @@ namespace PRS_API_AB.Controllers
             return NoContent();
         }
 
-        // POST: api/Users
+
+        // POST: creates user
+
         [HttpPost]
         public async Task<ActionResult<User>> PostUser(User user)
         {
@@ -72,7 +83,7 @@ namespace PRS_API_AB.Controllers
             return CreatedAtAction("GetUser", new { id = user.ID }, user);
         }
 
-        // DELETE: api/Users/5
+        // DELETE: deletes user
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
@@ -87,10 +98,33 @@ namespace PRS_API_AB.Controllers
 
             return NoContent();
         }
+ 
 
         private bool UserExists(int id)
         {
             return _context.Users.Any(e => e.ID == id);
         }
+            
+        
+            [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDTO loginDto)
+        {
+            if (string.IsNullOrEmpty(loginDto.Username) || string.IsNullOrEmpty(loginDto.Password))
+            {
+                return BadRequest("Username and password are required.");
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == loginDto.Username);
+
+            if (user == null || user.Password != loginDto.Password)
+            {
+                return Unauthorized("Invalid username or password.");
+            }
+
+        
+            return Ok(new { Message = "Login successful", User = user });
+        }
+
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PRS_API_AB.Models
+namespace PRSBackendAB.models
 {
     [Table("Vendor")]
     public class Vendor

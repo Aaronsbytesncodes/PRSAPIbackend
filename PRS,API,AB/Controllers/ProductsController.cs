@@ -1,34 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PRS_API_AB;
-using PRS_API_AB.Models;
+using PRSBackendAB.models;
 
-namespace PRS_API_AB.Controllers
+namespace PRSBackendAB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController : ControllerBase
+    public class ProductsController(PrsDbContext context) : ControllerBase
     {
-        private readonly PrsDbContext _context;
+        private readonly PrsDbContext _context = context;
 
-        public ProductsController(PrsDbContext context)
-        {
-            _context = context;
-        }
-
-        // GET: api/Products
+        // GET:gett all
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
             return await _context.Products.ToListAsync();
         }
 
-        // GET: api/Products/5
+        // GET: get by ID
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
@@ -42,10 +31,9 @@ namespace PRS_API_AB.Controllers
             return product;
         }
 
-        // PUT: api/Products/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // PUT: update
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(int id, Product product)
+        public async Task<IActionResult> PutProduct( int id, Product product)
         {
             if (id != product.ID)
             {
@@ -73,15 +61,25 @@ namespace PRS_API_AB.Controllers
             return NoContent();
         }
 
-        // POST: api/Products
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // POST: Add
         [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct(Product product)
+        public async Task<IActionResult> CreateProduct( Product product)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+           
+            if (product.ID != 0)
+            {
+                return BadRequest("ID should not be provided for new products.");
+            }
+
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetProduct", new { id = product.ID }, product);
+            return CreatedAtAction(nameof(GetProduct), new { id = product.ID }, product);
         }
 
         // DELETE: api/Products/5

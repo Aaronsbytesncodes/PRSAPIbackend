@@ -1,29 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PRS_API_AB;
-using PRS_API_AB.Models;
+using PRSBackendAB.models;
 
-namespace PRS_API_AB.Controllers
+namespace PRSBackendAB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class VendorsController(PrsDbContext context) : ControllerBase
+    public class VendorsController : ControllerBase
     {
-        private readonly PrsDbContext _context = context;
+        private readonly PrsDbContext _context;
 
-        // GET: api/Vendors
+        public VendorsController(PrsDbContext context)
+        {
+            _context = context;
+        }
+
+        // GET: all vendors
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Vendor>>> GetVendors()
         {
             return await _context.Vendors.ToListAsync();
         }
 
-        // GET: api/Vendors/5
+        // GET: get vendor by id
         [HttpGet("{id}")]
         public async Task<ActionResult<Vendor>> GetVendor(int id)
         {
@@ -37,13 +36,13 @@ namespace PRS_API_AB.Controllers
             return vendor;
         }
 
-        // PUT: api/Vendors/5
+        // PUT: Update a vendor
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutVendor(int id, Vendor vendor)
+        public async Task<IActionResult> PutVendor(int id, [FromBody] Vendor vendor)
         {
             if (id != vendor.ID)
             {
-                return BadRequest();
+                return BadRequest("The ID does not match");
             }
 
             _context.Entry(vendor).State = EntityState.Modified;
@@ -67,7 +66,7 @@ namespace PRS_API_AB.Controllers
             return NoContent();
         }
 
-        // POST: api/Vendors
+        // POST: add vendor
         [HttpPost]
         public async Task<ActionResult<Vendor>> PostVendor(Vendor vendor)
         {
@@ -77,7 +76,7 @@ namespace PRS_API_AB.Controllers
             return CreatedAtAction("GetVendor", new { id = vendor.ID }, vendor);
         }
 
-        // DELETE: api/Vendors/5
+        // DELETE: delete vendor
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVendor(int id)
         {
@@ -98,4 +97,6 @@ namespace PRS_API_AB.Controllers
             return _context.Vendors.Any(e => e.ID == id);
         }
     }
+
+
 }

@@ -1,11 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using PRS_API_AB;
-using PRS_API_AB.Services;
-// Add this using directive for SwaggerUI extensions
-// Ensure the following NuGet package is installed in your project:
-// Microsoft.AspNetCore.Authentication.JwtBearer
+using PRSBackendAB;
 
+using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -17,36 +13,28 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddDbContext<PrsDbContext>(options =>
    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-builder.Services.AddScoped<AuthService>();
-
-// Configure authentication and authorization
-
-builder.Services.AddAuthentication("Cookies")
-    .AddCookie("Cookies", options =>
-    {
-        options.LoginPath = "/Users/Login"; // Path to your login endpoint
-        options.LogoutPath = "/Users/Logout"; // Path to your logout endpoint
-        options.AccessDeniedPath = "/Users/AccessDenied"; // Optional: Path for access denied
-        options.Cookie.Name = "AuthCookie"; // Name of the cookie
-        options.ExpireTimeSpan = TimeSpan.FromHours(1); // Cookie expiration time
-        options.SlidingExpiration = true; // Renew cookie on activity
-    });
-
 
 var app = builder.Build();
+
+// Seed the database
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<PrsDbContext>();
+   
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger(); // Ensure Swashbuckle.AspNetCore is installed
+    app.UseSwagger();
     app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
- 
+
+
+
+

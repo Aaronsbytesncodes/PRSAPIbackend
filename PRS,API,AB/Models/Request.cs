@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PRS_API_AB.Models
+namespace PRSBackendAB.models
 {
     [Table("Request")]
     public class Request
@@ -15,10 +15,12 @@ namespace PRS_API_AB.Models
         public string? Description { get; set; }
         public string? Justification { get; set; }
         public DateTime? DateNeeded { get; set; }
-        public string? DeliveryMode { get; set; }
-        public string? Status { get; set; }
+        public string? DeliveryMode { get; set; } = "Pickup";
+        public string? Status { get; set; } = "NEW";
         public decimal? Total { get; set; }
         public DateTime? SubmittedDate { get; set; }
         public string? ReasonForRejection { get; set; }
     }
 }
+
+
