@@ -12,7 +12,7 @@ namespace PRSBackendAB.models
         public  required int VendorID { get; set; }
         public required string PartNumber { get; set; }
         public required string Name { get; set; }
-        public required int Price {  get; set; }
+        public required decimal Price {  get; set; }
         public string?  Unit {  get; set; }
         public string? PhotoPath { get; set; }
 

@@ -79,8 +79,9 @@ namespace PRSBackendAB.Controllers
             }
 
             _context.LineItems.Remove(lineItem);
-            await RecalculateRequestTotal(lineItem.RequestID); // Update the request total
             await _context.SaveChangesAsync();
+            await RecalculateRequestTotal(lineItem.RequestID); // Update the request total
+            
 
             return NoContent();
         }
