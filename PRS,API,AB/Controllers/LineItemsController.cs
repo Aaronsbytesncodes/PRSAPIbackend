@@ -10,9 +10,8 @@ namespace PRSBackendAB.Controllers
     {
         private readonly PrsDbContext _context = context;
 
-  
-      
-        [HttpGet("{id}")]// get by ID
+        // GET: Retrieve a line item by ID
+        [HttpGet("{id}")]
         public async Task<ActionResult<LineItem>> GetLineItem(int id)
         {
             var lineItem = await _context.LineItems.FindAsync(id);
@@ -25,10 +24,9 @@ namespace PRSBackendAB.Controllers
             return lineItem;
         }
 
-        // PUT: update and recalctotal
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // PUT: Update a line item and recalculate the associated request's total
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutLineItem( int id, LineItem lineItem)
+        public async Task<IActionResult> PutLineItem(int id, LineItem lineItem)
         {
             if (id != lineItem.Id)
             {
@@ -40,7 +38,7 @@ namespace PRSBackendAB.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                await RecalculateRequestTotal(lineItem.RequestID); // Recalculate total after update
+                await RecalculateRequestTotal(lineItem.RequestID); // Update the request total
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -57,52 +55,44 @@ namespace PRSBackendAB.Controllers
             return NoContent();
         }
 
-        // POST: add new line item and recalctotal
+        // POST: Add a new line item and recalculate the associated request's total
         [HttpPost]
         public async Task<ActionResult<LineItem>> PostLineItem([FromBody] LineItem lineItem)
         {
             _context.LineItems.Add(lineItem);
             await _context.SaveChangesAsync();
 
-            // Recalculate the total for the associated request
+            // Update the request total after adding the line item
             await RecalculateRequestTotal(lineItem.RequestID);
 
             return CreatedAtAction("GetLineItem", new { id = lineItem.Id }, lineItem);
         }
 
-
-        // DELETE: delete line item
-
+        // DELETE: Remove a line item and recalculate the associated request's total
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteLineItem(int id)
         {
             var lineItem = await _context.LineItems.FindAsync(id);
             if (lineItem == null)
             {
-                
                 return NotFound();
             }
-            await RecalculateRequestTotal(lineItem.RequestID);
+
             _context.LineItems.Remove(lineItem);
+            await RecalculateRequestTotal(lineItem.RequestID); // Update the request total
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool LineItemExists(int id)
-        {
-            return _context.LineItems.Any(e => e.Id == id);
-        }
-            
-            [HttpGet("lines-for-req/{reqId}")]// Get lineitems for request
+        // GET: Retrieve all line items for a specific request
+        [HttpGet("lines-for-req/{reqId}")]
         public async Task<ActionResult<IEnumerable<LineItem>>> GetLineItemsForRequest(int reqId)
         {
-           
             var lineItems = await _context.LineItems
                                           .Where(li => li.RequestID == reqId)
                                           .ToListAsync();
 
-            // Check if no LineItems were found
             if (lineItems == null || !lineItems.Any())
             {
                 return NotFound();
@@ -110,6 +100,14 @@ namespace PRSBackendAB.Controllers
 
             return Ok(lineItems);
         }
+
+        // Helper method: Check if a line item exists by ID
+        private bool LineItemExists(int id)
+        {
+            return _context.LineItems.Any(e => e.Id == id);
+        }
+
+        // Helper method: Recalculate the total for a specific request
         private async Task RecalculateRequestTotal(int requestId)
         {
             var request = await _context.Requests.FindAsync(requestId);

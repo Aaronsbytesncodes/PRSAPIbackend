@@ -13,7 +13,7 @@ namespace PRSBackendAB.Controllers
         private readonly PrsDbContext _context = context;
 
         // GET: Get All
-        [HttpGet]
+        [HttpGet ]
         public async Task<ActionResult<IEnumerable<Request>>> GetRequests()
         {
             return await _context.Requests.ToListAsync();
@@ -70,32 +70,35 @@ namespace PRSBackendAB.Controllers
         [HttpPost]
         public async Task<ActionResult<Request>> PostRequest([FromBody] RequestForm requestForm)
         {
-           
+
+
             var userExists = await _context.Users.AnyAsync(u => u.ID == requestForm.UserID);
             if (!userExists)
             {
                 return BadRequest("Invalid UserID. The specified user does not exist.");
             }
 
-          
+
             string nextRequestNumber = getNextRequestNumber();
 
-            
+
             var request = new Request
             {
                 UserID = requestForm.UserID,
                 Description = requestForm.Description,
                 Justification = requestForm.Justification,
                 DateNeeded = requestForm.DateNeeded,
-                DeliveryMode  ="Pickup",
-                RequestNumber = nextRequestNumber 
+                DeliveryMode = "Pickup",
+                RequestNumber = nextRequestNumber,
+                SubmittedDate = DateTime.Now,
+                Total = 0
             };
 
-          
+
             _context.Requests.Add(request);
             await _context.SaveChangesAsync();
 
-         
+
             return CreatedAtAction("GetRequest", new { id = request.ID }, request);
         }
 
@@ -159,83 +162,79 @@ namespace PRSBackendAB.Controllers
 
             return Ok(requests);
         }
+
         [HttpPut("approve/{id}")]// approv
-        public async Task<IActionResult> ApproveRequest(int id)
+        public async Task<ActionResult<Request>> ApproveRequest(int id)
         {
-            // Find the request by ID
-            var request = await _context.Requests.FindAsync(id);
-            if (request == null)
-            {
-                return NotFound();
-            }
-
-            // Set the status to "APPROVED"
-            request.Status = "APPROVED";
-
-            // Save changes to the database
-            _context.Entry(request).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            // Return the updated request
-            return Ok(request);
+            return await Status(id, "APPROVED", "");
         }
-        [HttpPut("reject/{id}")]// reject
-        public async Task<IActionResult> RejectRequest(int id)
+            [HttpPut("reject/{id}")]// reject
+       
+        
+        public async Task<ActionResult<Request>> RejectRequest(int id, string reason)
         {
-            // Find the request by ID
-            var request = await _context.Requests.FindAsync(id);
-            if (request == null)
-            {
-                return NotFound();
-            }
-
-            // Set the status to "APPROVED"
-            request.Status = "REJECTED";
-
-            // Save changes to the database
-            _context.Entry(request).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            // Return the updated request
-            return Ok(request);
+            return await Status(id, "REJECTED", reason);
         }
+                
+        
+        private async Task<ActionResult<Request>> Status(int id, string newStatus, string reason)
+                        {
+            // Find the request by ID
+                     var request = await _context.Requests.FindAsync(id);
+                        if (request == null)
+                         {
+                            return NotFound();
+                            }
+
+                        request.Status = newStatus;
+                        if (reason != null)
+                        {
+                         request.ReasonForRejection = reason;
+                         }
+                            // Save changes to the database
+                         _context.Entry(request).State = EntityState.Modified;
+                        await _context.SaveChangesAsync();
+                        return request;
+                         }
+
+ 
         private string getNextRequestNumber()
+{
+    // requestNumber format: RYYMMDD####
+
+    string requestNbr = "R";
+
+    // Add YYMMDD string
+    DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+    requestNbr += today.ToString("yyMMdd");
+
+    // Get maximum request number from db
+    string? maxReqNbr = _context.Requests
+                                .Where(r => r.RequestNumber.StartsWith(requestNbr))
+                                .Max(r => r.RequestNumber);
+
+    string reqNbr;
+    if (!string.IsNullOrEmpty(maxReqNbr))
+    {
+        // Extract last 4 characters and increment
+        string tempNbr = maxReqNbr.Substring(7);
+        if (int.TryParse(tempNbr, out int nbr))
         {
-            // requestNumber format: RYYMMDD####
-
-            string requestNbr = "R";
-
-            // Add YYMMDD string
-            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-            requestNbr += today.ToString("yyMMdd");
-
-            // Get maximum request number from db
-            string? maxReqNbr = _context.Requests
-                                        .Where(r => r.RequestNumber.StartsWith(requestNbr))
-                                        .Max(r => r.RequestNumber);
-
-            string reqNbr;
-            if (!string.IsNullOrEmpty(maxReqNbr))
-            {
-                // Extract last 4 characters and increment
-                string tempNbr = maxReqNbr.Substring(7);
-                if (int.TryParse(tempNbr, out int nbr))
-                {
-                    nbr++;
-                    reqNbr = nbr.ToString().PadLeft(4, '0');
-                }
-                else
-                {
-                    reqNbr = "0001";
-                }
-            }
-            else
-            {
-                reqNbr = "0001";
-            }
-
-            requestNbr += reqNbr;
-            return requestNbr;
+            nbr++;
+            reqNbr = nbr.ToString().PadLeft(4, '0');
         }
+        else
+        {
+            reqNbr = "0001";
+        }
+    }
+    else
+    {
+        reqNbr = "0001";
+    }
+
+    requestNbr += reqNbr;
+    return requestNbr;
+}
     }
 }

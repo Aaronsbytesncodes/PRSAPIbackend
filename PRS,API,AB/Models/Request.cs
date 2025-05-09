@@ -17,7 +17,7 @@ namespace PRSBackendAB.models
         public DateTime? DateNeeded { get; set; }
         public string? DeliveryMode { get; set; } = "Pickup";
         public string? Status { get; set; } = "NEW";
-        public decimal? Total { get; set; }
+        public decimal Total { get; set; } = 0;
         public DateTime? SubmittedDate { get; set; }
         public string? ReasonForRejection { get; set; }
     }

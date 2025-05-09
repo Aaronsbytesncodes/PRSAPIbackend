@@ -19,7 +19,7 @@ var app = builder.Build();
 // Seed the database
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<PrsDbContext>();
+    var context = scope. ServiceProvider.GetRequiredService<PrsDbContext>();
    
 }
 
